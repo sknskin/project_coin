@@ -22,7 +22,7 @@ export default function TimeframeSelector({
             className={`px-3 py-1 text-sm rounded-lg transition-colors ${
               isSelected
                 ? 'bg-primary-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             {tf.label}

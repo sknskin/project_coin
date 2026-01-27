@@ -1,23 +1,33 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../common/Modal';
+import ConfirmModal from '../common/ConfirmModal';
 import { useUIStore } from '../../store/uiStore';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function AuthModal() {
+  const { t } = useTranslation();
   const { isAuthModalOpen, authModalMode, closeAuthModal } = useUIStore();
   const { login, register, isLoggingIn, isRegistering, loginError, registerError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (authModalMode === 'login') {
       login({ email, password });
     } else {
-      register({ email, password, nickname: nickname || undefined });
+      // 회원가입인 경우 확인 모달 표시
+      setIsConfirmModalOpen(true);
     }
+  };
+
+  const handleRegisterConfirm = () => {
+    register({ email, password, nickname: nickname || undefined });
+    setIsConfirmModalOpen(false);
   };
 
   const error = authModalMode === 'login' ? loginError : registerError;
@@ -27,33 +37,33 @@ export default function AuthModal() {
     <Modal
       isOpen={isAuthModalOpen}
       onClose={closeAuthModal}
-      title={authModalMode === 'login' ? '로그인' : '회원가입'}
+      title={authModalMode === 'login' ? t('auth.login') : t('auth.register')}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            이메일
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('auth.email')}
           </label>
           <input
             type="email"
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            비밀번호
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('auth.password')}
           </label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             required
             minLength={8}
           />
@@ -61,22 +71,22 @@ export default function AuthModal() {
 
         {authModalMode === 'register' && (
           <div>
-            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
-              닉네임 (선택)
+            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('auth.nicknameOptional')}
             </label>
             <input
               type="text"
               id="nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             />
           </div>
         )}
 
         {error && (
           <p className="text-sm text-red-600">
-            {(error as Error).message || '오류가 발생했습니다.'}
+            {(error as Error).message || t('auth.error')}
           </p>
         )}
 
@@ -86,12 +96,23 @@ export default function AuthModal() {
           className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading
-            ? '처리 중...'
+            ? t('auth.processing')
             : authModalMode === 'login'
-              ? '로그인'
-              : '회원가입'}
+              ? t('auth.login')
+              : t('auth.register')}
         </button>
       </form>
+
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleRegisterConfirm}
+        title="회원가입"
+        message={`${email}로 회원가입을 진행하시겠습니까?`}
+        confirmText="회원가입"
+        cancelText="취소"
+        isLoading={isRegistering}
+      />
     </Modal>
   );
 }

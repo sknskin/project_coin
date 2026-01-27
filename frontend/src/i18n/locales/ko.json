@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "price": "시세",
+    "portfolio": "포트폴리오"
+  },
+  "auth": {
+    "login": "로그인",
+    "register": "회원가입",
+    "logout": "로그아웃",
+    "email": "이메일",
+    "password": "비밀번호",
+    "nickname": "닉네임",
+    "nicknameOptional": "닉네임 (선택)",
+    "processing": "처리 중...",
+    "error": "오류가 발생했습니다."
+  },
+  "dashboard": {
+    "title": "코인 시세",
+    "subtitle": "원화 마켓 기준 실시간 시세 정보입니다.",
+    "loadError": "데이터를 불러오는데 실패했습니다."
+  },
+  "market": {
+    "coin": "코인",
+    "currentPrice": "현재가",
+    "change": "전일대비",
+    "volume": "거래대금"
+  },
+  "coinDetail": {
+    "backToList": "목록으로",
+    "high": "고가",
+    "low": "저가",
+    "volume24h": "거래대금 (24H)",
+    "tradeVolume24h": "거래량 (24H)",
+    "high52Week": "52주 최고가",
+    "low52Week": "52주 최저가",
+    "weekInfo": "52주 최고/최저",
+    "noChartData": "차트 데이터가 없습니다.",
+    "invalidAccess": "잘못된 접근입니다."
+  },
+  "portfolio": {
+    "title": "내 포트폴리오",
+    "connectRequired": "업비트 연동 필요",
+    "connectDescription": "포트폴리오를 확인하려면 업비트 API를 연동해야 합니다.",
+    "connect": "업비트 연동하기",
+    "connecting": "연동 중...",
+    "connectSubmit": "연동하기",
+    "connectFailed": "연동에 실패했습니다. API 키를 확인해주세요.",
+    "loadError": "포트폴리오를 불러오는데 실패했습니다.",
+    "noHoldings": "보유한 코인이 없습니다.",
+    "apiConnect": "업비트 API 연동",
+    "apiKeyDescription": "업비트에서 발급받은 API 키를 입력해주세요.",
+    "getApiKey": "API 키 발급받기",
+    "accessKey": "Access Key",
+    "secretKey": "Secret Key"
+  },
+  "session": {
+    "warningTitle": "세션 만료 경고",
+    "warningMessage": "세션이 곧 만료됩니다.",
+    "remaining": "남은 시간",
+    "extend": "연장",
+    "cancel": "취소"
+  },
+  "common": {
+    "confirm": "확인",
+    "cancel": "취소"
+  }
+}

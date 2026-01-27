@@ -38,9 +38,9 @@ export default function Portfolio() {
   if (!status?.isConnected) {
     return (
       <div className="max-w-md mx-auto mt-12">
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4">업비트 연동 필요</h2>
-          <p className="text-gray-600 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">업비트 연동 필요</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             포트폴리오를 확인하려면 업비트 API를 연동해야 합니다.
           </p>
           <button
@@ -57,41 +57,41 @@ export default function Portfolio() {
           title="업비트 API 연동"
         >
           <form onSubmit={handleConnect} className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               업비트에서 발급받은 API 키를 입력해주세요.
               <br />
               <a
                 href="https://upbit.com/mypage/open_api_management"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-600 hover:underline"
+                className="text-primary-600 dark:text-primary-400 hover:underline"
               >
                 API 키 발급받기
               </a>
             </p>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Access Key
               </label>
               <input
                 type="text"
                 value={accessKey}
                 onChange={(e) => setAccessKey(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Secret Key
               </label>
               <input
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 required
               />
             </div>
@@ -138,7 +138,7 @@ export default function Portfolio() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">내 포트폴리오</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">내 포트폴리오</h1>
       </div>
 
       <PortfolioSummary portfolio={portfolio} />
@@ -146,7 +146,7 @@ export default function Portfolio() {
       {portfolio.holdings.length > 0 ? (
         <HoldingsList holdings={portfolio.holdings} />
       ) : (
-        <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center text-gray-500 dark:text-gray-400">
           보유한 코인이 없습니다.
         </div>
       )}

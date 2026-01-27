@@ -49,17 +49,17 @@ export default function CoinDetail() {
       <div className="mb-6">
         <Link
           to="/"
-          className="text-primary-600 hover:text-primary-700 text-sm mb-2 inline-block"
+          className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm mb-2 inline-block"
         >
           &larr; 목록으로
         </Link>
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {market?.korean_name || marketCode.replace('KRW-', '')}
             </h1>
-            <p className="text-gray-500">{marketCode}</p>
+            <p className="text-gray-500 dark:text-gray-400">{marketCode}</p>
           </div>
 
           {ticker && (
@@ -78,34 +78,34 @@ export default function CoinDetail() {
 
       {ticker && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-500">고가</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">고가</p>
             <p className="text-lg font-semibold tabular-nums text-rise">
               {formatPrice(ticker.highPrice)}
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-500">저가</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">저가</p>
             <p className="text-lg font-semibold tabular-nums text-fall">
               {formatPrice(ticker.lowPrice)}
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-500">거래대금 (24H)</p>
-            <p className="text-lg font-semibold tabular-nums">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">거래대금 (24H)</p>
+            <p className="text-lg font-semibold tabular-nums dark:text-white">
               {formatVolume(ticker.accTradePrice24h)}
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-sm text-gray-500">거래량 (24H)</p>
-            <p className="text-lg font-semibold tabular-nums">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">거래량 (24H)</p>
+            <p className="text-lg font-semibold tabular-nums dark:text-white">
               {formatVolume(ticker.accTradeVolume24h)}
             </p>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <div className="mb-4">
           <TimeframeSelector
             selectedType={timeframeType}
@@ -121,25 +121,25 @@ export default function CoinDetail() {
         ) : candles && candles.length > 0 ? (
           <CoinChart candles={candles} height={400} />
         ) : (
-          <div className="flex items-center justify-center h-96 text-gray-500">
+          <div className="flex items-center justify-center h-96 text-gray-500 dark:text-gray-400">
             차트 데이터가 없습니다.
           </div>
         )}
       </div>
 
       {ticker && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">52주 최고/최저</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4 dark:text-white">52주 최고/최저</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500">52주 최고가</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">52주 최고가</p>
               <p className="text-lg font-semibold tabular-nums text-rise">
                 {formatPrice(ticker.highest52WeekPrice)}
               </p>
               <p className="text-xs text-gray-400">{ticker.highest52WeekDate}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">52주 최저가</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">52주 최저가</p>
               <p className="text-lg font-semibold tabular-nums text-fall">
                 {formatPrice(ticker.lowest52WeekPrice)}
               </p>

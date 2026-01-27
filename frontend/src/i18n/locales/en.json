@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "price": "Price",
+    "portfolio": "Portfolio"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "nickname": "Nickname",
+    "nicknameOptional": "Nickname (Optional)",
+    "processing": "Processing...",
+    "error": "An error occurred."
+  },
+  "dashboard": {
+    "title": "Coin Price",
+    "subtitle": "Real-time price information for KRW market.",
+    "loadError": "Failed to load data."
+  },
+  "market": {
+    "coin": "Coin",
+    "currentPrice": "Price",
+    "change": "Change",
+    "volume": "Volume"
+  },
+  "coinDetail": {
+    "backToList": "Back to list",
+    "high": "High",
+    "low": "Low",
+    "volume24h": "Volume (24H)",
+    "tradeVolume24h": "Trade Volume (24H)",
+    "high52Week": "52 Week High",
+    "low52Week": "52 Week Low",
+    "weekInfo": "52 Week High/Low",
+    "noChartData": "No chart data available.",
+    "invalidAccess": "Invalid access."
+  },
+  "portfolio": {
+    "title": "My Portfolio",
+    "connectRequired": "Upbit Connection Required",
+    "connectDescription": "You need to connect your Upbit API to view your portfolio.",
+    "connect": "Connect Upbit",
+    "connecting": "Connecting...",
+    "connectSubmit": "Connect",
+    "connectFailed": "Connection failed. Please check your API key.",
+    "loadError": "Failed to load portfolio.",
+    "noHoldings": "No holdings.",
+    "apiConnect": "Upbit API Connection",
+    "apiKeyDescription": "Please enter the API key issued from Upbit.",
+    "getApiKey": "Get API Key",
+    "accessKey": "Access Key",
+    "secretKey": "Secret Key"
+  },
+  "session": {
+    "warningTitle": "Session Expiring",
+    "warningMessage": "Your session will expire soon.",
+    "remaining": "Time Remaining",
+    "extend": "Extend",
+    "cancel": "Cancel"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  }
+}

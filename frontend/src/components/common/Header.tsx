@@ -1,65 +1,106 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { useAuth } from '../../hooks/useAuth';
+import { useSessionTimer } from '../../hooks/useSessionTimer';
+import ThemeToggle from './ThemeToggle';
+import LanguageToggle from './LanguageToggle';
+import ConfirmModal from './ConfirmModal';
 
 export default function Header() {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAuthStore();
   const { openAuthModal } = useUIStore();
   const { logout } = useAuth();
+  const { formattedTime, isExpiringSoon } = useSessionTimer();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const handleLogoutClick = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    logout();
+    setIsLogoutModalOpen(false);
+  };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link to="/" className="text-xl font-bold text-primary-600">
+            <Link to="/" className="text-xl font-bold text-primary-600 dark:text-primary-400">
               Project Coin
             </Link>
             <nav className="hidden md:flex space-x-6">
               <Link
                 to="/"
-                className="text-gray-600 hover:text-primary-600 transition-colors"
+                className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
-                시세
+                {t('nav.price')}
               </Link>
               {isAuthenticated && (
                 <Link
                   to="/portfolio"
-                  className="text-gray-600 hover:text-primary-600 transition-colors"
+                  className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
-                  포트폴리오
+                  {t('nav.portfolio')}
                 </Link>
               )}
             </nav>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            <ThemeToggle />
+            <LanguageToggle />
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-gray-600">
-                  {user?.nickname || user?.email}
-                </span>
+                <div className="flex items-center space-x-2 text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">
+                    {user?.nickname || user?.email}님
+                  </span>
+                  <span
+                    className={`font-mono tabular-nums px-2 py-0.5 rounded ${
+                      isExpiringSoon
+                        ? 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {formattedTime}
+                  </span>
+                </div>
                 <button
-                  onClick={() => logout()}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  onClick={handleLogoutClick}
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
-                  로그아웃
+                  {t('auth.logout')}
                 </button>
+                <ConfirmModal
+                  isOpen={isLogoutModalOpen}
+                  onClose={() => setIsLogoutModalOpen(false)}
+                  onConfirm={handleLogoutConfirm}
+                  title="로그아웃"
+                  message="로그아웃 하시겠습니까?"
+                  confirmText="로그아웃"
+                  cancelText="취소"
+                  variant="danger"
+                />
               </>
             ) : (
               <>
                 <button
                   onClick={() => openAuthModal('login')}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
-                  로그인
+                  {t('auth.login')}
                 </button>
                 <button
                   onClick={() => openAuthModal('register')}
                   className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
-                  회원가입
+                  {t('auth.register')}
                 </button>
               </>
             )}

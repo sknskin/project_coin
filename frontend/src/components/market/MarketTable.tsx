@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useMarketStore } from '../../store/marketStore';
 import { formatPrice, formatPercent, formatVolume, getChangeColor } from '../../utils/format';
 import type { Market } from '../../types';
@@ -9,6 +10,7 @@ interface MarketTableProps {
 }
 
 export default function MarketTable({ markets }: MarketTableProps) {
+  const { t } = useTranslation();
   const tickers = useMarketStore((state) => state.tickers);
 
   const sortedMarkets = useMemo(() => {
@@ -22,25 +24,25 @@ export default function MarketTable({ markets }: MarketTableProps) {
   }, [markets, tickers]);
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
       <table className="w-full">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              코인
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {t('market.coin')}
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              현재가
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {t('market.currentPrice')}
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              전일대비
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {t('market.change')}
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              거래대금
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              {t('market.volume')}
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
           {sortedMarkets.map((market) => {
             const ticker = tickers.get(market.market);
             const change = ticker?.change || 'EVEN';
@@ -49,17 +51,17 @@ export default function MarketTable({ markets }: MarketTableProps) {
             return (
               <tr
                 key={market.market}
-                className="hover:bg-gray-50 transition-colors"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <td className="px-4 py-3">
                   <Link
                     to={`/coin/${market.market}`}
                     className="flex flex-col"
                   >
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 dark:text-white">
                       {market.korean_name}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {market.market.replace('KRW-', '')}
                     </span>
                   </Link>
@@ -80,7 +82,7 @@ export default function MarketTable({ markets }: MarketTableProps) {
                     '-'
                   )}
                 </td>
-                <td className="px-4 py-3 text-right text-gray-600 tabular-nums">
+                <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400 tabular-nums">
                   {ticker ? formatVolume(ticker.accTradePrice24h) : '-'}
                 </td>
               </tr>

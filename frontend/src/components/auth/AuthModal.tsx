@@ -107,10 +107,10 @@ export default function AuthModal() {
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
         onConfirm={handleRegisterConfirm}
-        title="회원가입"
-        message={`${email}로 회원가입을 진행하시겠습니까?`}
-        confirmText="회원가입"
-        cancelText="취소"
+        title={t('auth.register')}
+        message={t('auth.registerConfirm', { email })}
+        confirmText={t('auth.register')}
+        cancelText={t('common.cancel')}
         isLoading={isRegistering}
       />
     </Modal>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { useUIStore } from '../store/uiStore';
 import { usePortfolio, usePortfolioStatus, useConnectUpbit } from '../hooks/usePortfolio';
@@ -9,6 +10,7 @@ import Modal from '../components/common/Modal';
 import Loading from '../components/common/Loading';
 
 export default function Portfolio() {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuthStore();
   const { isUpbitConnectModalOpen, openUpbitConnectModal, closeUpbitConnectModal } = useUIStore();
   const { data: status, isLoading: isStatusLoading } = usePortfolioStatus();
@@ -39,26 +41,26 @@ export default function Portfolio() {
     return (
       <div className="max-w-md mx-auto mt-12">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4 dark:text-white">업비트 연동 필요</h2>
+          <h2 className="text-xl font-semibold mb-4 dark:text-white">{t('portfolio.connectRequired')}</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            포트폴리오를 확인하려면 업비트 API를 연동해야 합니다.
+            {t('portfolio.connectDescription')}
           </p>
           <button
             onClick={openUpbitConnectModal}
             className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
-            업비트 연동하기
+            {t('portfolio.connect')}
           </button>
         </div>
 
         <Modal
           isOpen={isUpbitConnectModalOpen}
           onClose={closeUpbitConnectModal}
-          title="업비트 API 연동"
+          title={t('portfolio.apiConnect')}
         >
           <form onSubmit={handleConnect} className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              업비트에서 발급받은 API 키를 입력해주세요.
+              {t('portfolio.apiKeyDescription')}
               <br />
               <a
                 href="https://upbit.com/mypage/open_api_management"
@@ -66,13 +68,13 @@ export default function Portfolio() {
                 rel="noopener noreferrer"
                 className="text-primary-600 dark:text-primary-400 hover:underline"
               >
-                API 키 발급받기
+                {t('portfolio.getApiKey')}
               </a>
             </p>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Access Key
+                {t('portfolio.accessKey')}
               </label>
               <input
                 type="text"
@@ -85,7 +87,7 @@ export default function Portfolio() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Secret Key
+                {t('portfolio.secretKey')}
               </label>
               <input
                 type="password"
@@ -98,7 +100,7 @@ export default function Portfolio() {
 
             {connectMutation.error && (
               <p className="text-sm text-red-600">
-                연동에 실패했습니다. API 키를 확인해주세요.
+                {t('portfolio.connectFailed')}
               </p>
             )}
 
@@ -107,7 +109,7 @@ export default function Portfolio() {
               disabled={connectMutation.isPending}
               className="w-full py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
             >
-              {connectMutation.isPending ? '연동 중...' : '연동하기'}
+              {connectMutation.isPending ? t('portfolio.connecting') : t('portfolio.connectSubmit')}
             </button>
           </form>
         </Modal>
@@ -126,7 +128,7 @@ export default function Portfolio() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-red-600">포트폴리오를 불러오는데 실패했습니다.</p>
+        <p className="text-red-600">{t('portfolio.loadError')}</p>
       </div>
     );
   }
@@ -138,7 +140,7 @@ export default function Portfolio() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">내 포트폴리오</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('portfolio.title')}</h1>
       </div>
 
       <PortfolioSummary portfolio={portfolio} />
@@ -147,7 +149,7 @@ export default function Portfolio() {
         <HoldingsList holdings={portfolio.holdings} />
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center text-gray-500 dark:text-gray-400">
-          보유한 코인이 없습니다.
+          {t('portfolio.noHoldings')}
         </div>
       )}
     </div>

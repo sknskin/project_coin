@@ -47,3 +47,18 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* Prevent layout shift when modal opens */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Prevent horizontal scroll */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Fixed elements should also receive padding when scrollbar is hidden */
+html:has(body[style*="overflow: hidden"]) .fixed-header {
+  padding-right: inherit;
+}

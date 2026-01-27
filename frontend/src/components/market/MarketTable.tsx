@@ -10,7 +10,7 @@ interface MarketTableProps {
 }
 
 export default function MarketTable({ markets }: MarketTableProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const tickers = useMarketStore((state) => state.tickers);
 
   const sortedMarkets = useMemo(() => {
@@ -59,7 +59,7 @@ export default function MarketTable({ markets }: MarketTableProps) {
                     className="flex flex-col"
                   >
                     <span className="font-medium text-gray-900 dark:text-white">
-                      {market.korean_name}
+                      {i18n.language === 'ko' ? market.korean_name : market.english_name}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {market.market.replace('KRW-', '')}

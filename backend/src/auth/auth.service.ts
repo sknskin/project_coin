@@ -2,17 +2,20 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto } from './dto';
 
 export interface JwtPayload {
   sub: string;
   email: string;
+  role: UserRole;
   type: 'access' | 'refresh';
 }
 
@@ -21,6 +24,9 @@ export interface AuthResponse {
     id: string;
     email: string;
     nickname: string | null;
+    name: string | null;
+    role: UserRole;
+    isApproved: boolean;
   };
   accessToken: string;
   refreshToken: string;
@@ -50,10 +56,15 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         nickname: dto.nickname,
+        name: dto.name,
+        phone: dto.phone,
+        address: dto.address,
+        role: UserRole.USER,
+        isApproved: false, // 관리자 승인 필요
       },
     });
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
     return {
@@ -61,12 +72,15 @@ export class AuthService {
         id: user.id,
         email: user.email,
         nickname: user.nickname,
+        name: user.name,
+        role: user.role,
+        isApproved: user.isApproved,
       },
       ...tokens,
     };
   }
 
-  async login(dto: LoginDto): Promise<AuthResponse> {
+  async login(dto: LoginDto, ipAddress?: string, userAgent?: string): Promise<AuthResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -78,10 +92,20 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!isPasswordValid) {
+      // 실패한 로그인 기록
+      await this.recordLoginHistory(user.id, ipAddress, userAgent, false);
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    // 승인되지 않은 사용자 체크 (ADMIN은 승인 필요 없음)
+    if (!user.isApproved && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Account pending approval');
+    }
+
+    // 성공한 로그인 기록
+    await this.recordLoginHistory(user.id, ipAddress, userAgent, true);
+
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
     return {
@@ -89,6 +113,9 @@ export class AuthService {
         id: user.id,
         email: user.email,
         nickname: user.nickname,
+        name: user.name,
+        role: user.role,
+        isApproved: user.isApproved,
       },
       ...tokens,
     };
@@ -117,10 +144,11 @@ export class AuthService {
       {
         sub: storedToken.user.id,
         email: storedToken.user.email,
+        role: storedToken.user.role,
         type: 'access',
       },
       {
-        expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION') || '15m',
+        expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION') || '30m',
       },
     );
 
@@ -134,6 +162,11 @@ export class AuthService {
         id: true,
         email: true,
         nickname: true,
+        name: true,
+        phone: true,
+        address: true,
+        role: true,
+        isApproved: true,
         createdAt: true,
       },
     });
@@ -142,15 +175,17 @@ export class AuthService {
   private async generateTokens(
     userId: string,
     email: string,
+    role: UserRole,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.jwtService.sign(
       {
         sub: userId,
         email,
+        role,
         type: 'access',
       },
       {
-        expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION') || '15m',
+        expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION') || '30m',
       },
     );
 
@@ -158,6 +193,7 @@ export class AuthService {
       {
         sub: userId,
         email,
+        role,
         type: 'refresh',
         jti: uuidv4(),
       },
@@ -181,6 +217,22 @@ export class AuthService {
         token,
         userId,
         expiresAt,
+      },
+    });
+  }
+
+  private async recordLoginHistory(
+    userId: string,
+    ipAddress?: string,
+    userAgent?: string,
+    isSuccess: boolean = true,
+  ): Promise<void> {
+    await this.prisma.loginHistory.create({
+      data: {
+        userId,
+        ipAddress,
+        userAgent,
+        isSuccess,
       },
     });
   }

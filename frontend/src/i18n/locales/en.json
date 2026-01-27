@@ -1,18 +1,38 @@
 {
   "nav": {
+    "home": "Home",
     "price": "Price",
     "portfolio": "Portfolio"
+  },
+  "home": {
+    "title": "Project Coin",
+    "subtitle": "Upbit Cryptocurrency Dashboard",
+    "viewCoins": "View Coin Prices",
+    "overview": "Project Overview",
+    "description": "A web application for real-time cryptocurrency price monitoring and portfolio management using Upbit API. It provides real-time price updates via WebSocket and candlestick charts with various timeframes.",
+    "features": "Key Features",
+    "feature1": "Real-time coin price monitoring (WebSocket)",
+    "feature2": "Candlestick charts (various timeframes)",
+    "feature3": "User registration/login",
+    "feature4": "Upbit API integration",
+    "feature5": "Portfolio view (holdings, profit/loss)",
+    "techStack": "Tech Stack",
+    "github": "GitHub Repository",
+    "license": "Distributed under MIT License."
   },
   "auth": {
     "login": "Login",
     "register": "Sign Up",
     "logout": "Logout",
+    "logoutConfirm": "Are you sure you want to logout?",
     "email": "Email",
     "password": "Password",
     "nickname": "Nickname",
     "nicknameOptional": "Nickname (Optional)",
     "processing": "Processing...",
-    "error": "An error occurred."
+    "error": "An error occurred.",
+    "userSuffix": "",
+    "registerConfirm": "Do you want to sign up with {{email}}?"
   },
   "dashboard": {
     "title": "Coin Price",

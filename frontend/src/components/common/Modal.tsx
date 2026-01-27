@@ -1,14 +1,31 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  autoFocus?: boolean;
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, autoFocus = true }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<Element | null>(null);
+
+  const focusFirstInput = useCallback(() => {
+    if (!modalRef.current || !autoFocus) return;
+
+    // 약간의 지연 후 첫 번째 입력 요소에 포커스
+    requestAnimationFrame(() => {
+      const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+        'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
+      );
+
+      if (focusableElements && focusableElements.length > 0) {
+        focusableElements[0].focus();
+      }
+    });
+  }, [autoFocus]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -18,15 +35,37 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      // 현재 포커스된 요소 저장
+      previousActiveElement.current = document.activeElement;
+
+      // 스크롤바 너비 계산
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+      // HTML 요소에도 스타일 적용하여 레이아웃 시프트 방지
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.paddingRight = `${scrollbarWidth}px`;
       document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+      document.addEventListener('keydown', handleEscape);
+
+      // 첫 번째 입력 요소에 포커스
+      focusFirstInput();
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.documentElement.style.paddingRight = '';
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+
+      // 모달 닫힐 때 이전 요소로 포커스 복원
+      if (previousActiveElement.current instanceof HTMLElement) {
+        previousActiveElement.current.focus();
+      }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, focusFirstInput]);
 
   if (!isOpen) return null;
 

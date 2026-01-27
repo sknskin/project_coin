@@ -39,6 +39,12 @@ export default function Header() {
                 to="/"
                 className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
+                {t('nav.home')}
+              </Link>
+              <Link
+                to="/coins"
+                className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              >
                 {t('nav.price')}
               </Link>
               {isAuthenticated && (
@@ -59,7 +65,7 @@ export default function Header() {
               <>
                 <div className="flex items-center space-x-2 text-sm">
                   <span className="text-gray-600 dark:text-gray-300">
-                    {user?.nickname || user?.email}님
+                    {user?.nickname || user?.email}{t('auth.userSuffix')}
                   </span>
                   <span
                     className={`font-mono tabular-nums px-2 py-0.5 rounded ${
@@ -81,10 +87,10 @@ export default function Header() {
                   isOpen={isLogoutModalOpen}
                   onClose={() => setIsLogoutModalOpen(false)}
                   onConfirm={handleLogoutConfirm}
-                  title="로그아웃"
-                  message="로그아웃 하시겠습니까?"
-                  confirmText="로그아웃"
-                  cancelText="취소"
+                  title={t('auth.logout')}
+                  message={t('auth.logoutConfirm')}
+                  confirmText={t('auth.logout')}
+                  cancelText={t('common.cancel')}
                   variant="danger"
                 />
               </>

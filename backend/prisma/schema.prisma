@@ -7,17 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
   passwordHash  String    @map("password_hash")
   nickname      String?
+  name          String?   // 성명
+  phone         String?   // 연락처
+  address       String?   // 주소
+  role          UserRole  @default(USER)
+  isApproved    Boolean   @default(false) @map("is_approved") // 관리자 승인 여부
+  approvedAt    DateTime? @map("approved_at")
+  approvedBy    String?   @map("approved_by") // 승인한 관리자 ID
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   upbitCredential UpbitCredential?
   refreshTokens   RefreshToken[]
   watchlist       Watchlist[]
+  loginHistories  LoginHistory[]
 
   @@map("users")
 }
@@ -33,6 +46,21 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+model LoginHistory {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  loginAt     DateTime @default(now()) @map("login_at")
+  isSuccess   Boolean  @default(true) @map("is_success")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([loginAt])
+  @@map("login_histories")
 }
 
 model UpbitCredential {

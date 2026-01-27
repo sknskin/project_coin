@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import Modal from './Modal';
 
 interface ConfirmModalProps {
@@ -18,11 +19,14 @@ export default function ConfirmModal({
   onConfirm,
   title,
   message,
-  confirmText = '확인',
-  cancelText = '취소',
+  confirmText,
+  cancelText,
   isLoading = false,
   variant = 'default',
 }: ConfirmModalProps) {
+  const { t } = useTranslation();
+  const finalConfirmText = confirmText || t('common.confirm');
+  const finalCancelText = cancelText || t('common.cancel');
   const confirmButtonClass =
     variant === 'danger'
       ? 'bg-red-600 hover:bg-red-700 text-white'
@@ -38,14 +42,14 @@ export default function ConfirmModal({
             disabled={isLoading}
             className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
           >
-            {cancelText}
+            {finalCancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
             className={`px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${confirmButtonClass}`}
           >
-            {isLoading ? '처리 중...' : confirmText}
+            {isLoading ? t('auth.processing') : finalConfirmText}
           </button>
         </div>
       </div>

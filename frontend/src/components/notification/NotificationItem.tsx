@@ -26,6 +26,12 @@ export default function NotificationItem({
     // 알림 타입에 따라 적절한 페이지로 이동
     if (notification.data) {
       switch (notification.type) {
+        case 'SYSTEM':
+          // 회원가입 요청 알림인 경우 회원 상세 페이지로 이동
+          if (notification.data.type === 'registration_request' && notification.data.userId) {
+            navigate(`/admin/members/${notification.data.userId}`);
+          }
+          break;
         case 'PRICE_ALERT':
           if (notification.data.marketCode) {
             navigate(`/coin/${notification.data.marketCode}`);

@@ -53,6 +53,7 @@ interface ChatState {
   markConversationAsRead: (conversationId: string) => void;
   incrementUnreadCount: (conversationId: string) => void;
   getTotalUnreadCount: () => number;
+  getConversationsWithUnreadCount: () => number;
 
   // 온라인 상태
   setUserOnline: (userId: string, isOnline: boolean) => void;
@@ -133,6 +134,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => {
       const newMessages = new Map(state.messages);
       const existing = newMessages.get(conversationId) || [];
+
+      // 중복 메시지 체크 - 같은 ID의 메시지가 이미 있으면 추가하지 않음
+      if (existing.some((m) => m.id === message.id)) {
+        return state;
+      }
+
       newMessages.set(conversationId, [...existing, message]);
 
       // 대화 목록에서 해당 대화를 맨 위로 이동
@@ -178,6 +185,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     let total = 0;
     counts.forEach((count) => (total += count));
     return total;
+  },
+
+  // 읽지 않은 메시지가 있는 대화 수 반환 (알림용)
+  getConversationsWithUnreadCount: () => {
+    const counts = get().unreadCounts;
+    let count = 0;
+    counts.forEach((unread) => {
+      if (unread > 0) count++;
+    });
+    return count;
   },
 
   setUserOnline: (userId, isOnline) =>

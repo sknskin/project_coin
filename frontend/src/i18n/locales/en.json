@@ -83,5 +83,32 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel"
+  },
+  "notification": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications.",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago"
+  },
+  "chat": {
+    "title": "Chat",
+    "newConversation": "New Conversation",
+    "searchUsers": "Search users...",
+    "noConversations": "No conversations.",
+    "noUsers": "No users.",
+    "noUsersFound": "No users found.",
+    "noMessages": "No messages",
+    "you": "You",
+    "unknown": "Unknown",
+    "typeMessage": "Type a message...",
+    "startConversation": "Start a conversation!",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "online": "Online",
+    "offline": "Offline",
+    "typing": "Typing..."
   }
 }

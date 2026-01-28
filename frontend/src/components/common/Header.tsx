@@ -8,6 +8,8 @@ import { useSessionTimer } from '../../hooks/useSessionTimer';
 import ThemeToggle from './ThemeToggle';
 import LanguageToggle from './LanguageToggle';
 import ConfirmModal from './ConfirmModal';
+import NotificationIcon from '../notification/NotificationIcon';
+import ChatIcon from '../chat/ChatIcon';
 
 export default function Header() {
   const { t } = useTranslation();
@@ -35,12 +37,6 @@ export default function Header() {
               Project Coin
             </Link>
             <nav className="hidden md:flex space-x-6">
-              <Link
-                to="/"
-                className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-              >
-                {t('nav.home')}
-              </Link>
               <Link
                 to="/coins"
                 className="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
@@ -76,6 +72,10 @@ export default function Header() {
                   >
                     {formattedTime}
                   </span>
+                </div>
+                <div className="flex items-center">
+                  <NotificationIcon />
+                  <ChatIcon />
                 </div>
                 <button
                   onClick={handleLogoutClick}

@@ -6,6 +6,8 @@ import { UpbitModule } from './upbit/upbit.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { NotificationModule } from './notification/notification.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { PrismaModule } from './prisma/prisma.module';
     UpbitModule,
     PortfolioModule,
     WebsocketModule,
+    NotificationModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

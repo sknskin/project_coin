@@ -4,6 +4,7 @@ import { useMarkets } from '../hooks/useMarketData';
 import { useMarketWebSocket } from '../hooks/useWebSocket';
 import MarketTable from '../components/market/MarketTable';
 import Loading from '../components/common/Loading';
+import Pagination from '../components/common/Pagination';
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -59,27 +60,11 @@ export default function Dashboard() {
 
       {markets && <MarketTable markets={markets} page={page} pageSize={pageSize} />}
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('common.prev')}
-          </button>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {page} / {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('common.next')}
-          </button>
-        </div>
-      )}
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

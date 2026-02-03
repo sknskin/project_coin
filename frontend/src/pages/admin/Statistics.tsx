@@ -60,17 +60,24 @@ export default function Statistics() {
   });
 
   useEffect(() => {
-    const socket: Socket = io(import.meta.env.VITE_WS_URL || 'http://localhost:3000', {
-      path: '/socket.io',
-      transports: ['websocket'],
-    });
+    const socket: Socket = io(
+      `${import.meta.env.VITE_WS_URL || 'http://localhost:3000'}/statistics`,
+      {
+        path: '/socket.io',
+        transports: ['websocket'],
+      }
+    );
 
     socket.on('connect', () => {
-      socket.emit('joinStatistics');
+      socket.emit('stats:subscribe');
     });
 
-    socket.on('statisticsUpdate', (data: RealTimeStats) => {
+    socket.on('stats:realtime', (data: RealTimeStats) => {
       setRealTimeStats(data);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.warn('Statistics socket connection error:', error.message);
     });
 
     return () => {
@@ -95,10 +102,10 @@ export default function Statistics() {
   const hasEnoughData = chartData.length >= 2;
 
   const statCards = [
-    { label: t('stats.activeVisitors'), value: realTimeStats?.activeVisitors || 0, color: 'bg-blue-500' },
-    { label: t('stats.todayLogins'), value: realTimeStats?.todayLogins || 0, color: 'bg-green-500' },
-    { label: t('stats.todayRegistrations'), value: realTimeStats?.todayRegistrations || 0, color: 'bg-red-500' },
-    { label: t('stats.todayPageViews'), value: realTimeStats?.todayPageViews || 0, color: 'bg-purple-500' },
+    { label: t('stats.activeVisitors'), desc: t('stats.activeVisitorsDesc'), value: realTimeStats?.activeVisitors || 0, color: 'bg-blue-500' },
+    { label: t('stats.todayLogins'), desc: t('stats.todayLoginsDesc'), value: realTimeStats?.todayLogins || 0, color: 'bg-green-500' },
+    { label: t('stats.todayRegistrations'), desc: t('stats.todayRegistrationsDesc'), value: realTimeStats?.todayRegistrations || 0, color: 'bg-yellow-500' },
+    { label: t('stats.todayPageViews'), desc: t('stats.todayPageViewsDesc'), value: realTimeStats?.todayPageViews || 0, color: 'bg-purple-500' },
   ];
 
   return (
@@ -114,11 +121,12 @@ export default function Statistics() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statCards.map((card) => (
           <div key={card.label} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-3 h-3 rounded-full ${card.color}`}></div>
+            <div className="flex items-start gap-3">
+              <div className={`w-3 h-3 rounded-full ${card.color} mt-2 flex-shrink-0`}></div>
               <div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{card.label}</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{card.label}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{card.desc}</div>
               </div>
             </div>
           </div>

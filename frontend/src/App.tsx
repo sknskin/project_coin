@@ -19,11 +19,15 @@ import { useAuthStore } from './store/authStore';
 import { useSessionManager } from './hooks/useSessionManager';
 import { useNotificationWebSocket } from './hooks/useNotificationWebSocket';
 import { useChatWebSocket } from './hooks/useChatWebSocket';
+import { useVisitorTracking } from './hooks/useVisitorTracking';
 
 function App() {
   const { isAuthModalOpen } = useUIStore();
   const { isAuthenticated } = useAuthStore();
   const { handleExtend, handleDismiss } = useSessionManager();
+
+  // 방문자 추적
+  useVisitorTracking();
 
   // 인증된 사용자만 WebSocket 연결
   useNotificationWebSocket();

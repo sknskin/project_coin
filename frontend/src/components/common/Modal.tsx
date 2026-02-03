@@ -65,6 +65,9 @@ export default function Modal({ isOpen, onClose, title, children, autoFocus = tr
     return () => {
       document.removeEventListener('keydown', handleEscape);
 
+      // 스크롤 위치를 먼저 저장
+      const scrollY = savedScrollY.current;
+
       // body 스타일 복원
       document.body.style.position = '';
       document.body.style.top = '';
@@ -72,8 +75,12 @@ export default function Modal({ isOpen, onClose, title, children, autoFocus = tr
       document.body.style.overflowY = '';
 
       // 스크롤 위치 복원 (저장된 값이 있을 때만)
-      if (savedScrollY.current !== null) {
-        window.scrollTo(0, savedScrollY.current);
+      if (scrollY !== null) {
+        // 즉시 복원 후 다음 프레임에서 다시 복원하여 안정성 확보
+        window.scrollTo(0, scrollY);
+        requestAnimationFrame(() => {
+          window.scrollTo(0, scrollY);
+        });
         savedScrollY.current = null;
       }
 

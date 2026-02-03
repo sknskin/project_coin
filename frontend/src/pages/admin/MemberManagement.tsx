@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../../api/admin.api';
+import Pagination from '../../components/common/Pagination';
 import type { UserFilter, UserRole, UserStatus, ApprovalStatus, AdminUser } from '../../types/admin.types';
 
 type SortKey = 'email' | 'username' | 'nickname' | 'role' | 'status' | 'approval' | 'joinDate' | 'lastLogin';
@@ -132,8 +133,24 @@ export default function MemberManagement() {
     );
   };
 
+  // 역할 우선순위: SYSTEM > ADMIN > USER
+  const rolePriority: Record<string, number> = {
+    SYSTEM: 0,
+    ADMIN: 1,
+    USER: 2,
+  };
+
   const sortedUsers = useMemo(() => {
-    if (!sortKey || sortDirection === 'none') return users;
+    // 기본 정렬: 역할 우선순위 순서
+    if (!sortKey || sortDirection === 'none') {
+      return [...users].sort((a, b) => {
+        const priorityA = rolePriority[a.role] ?? 99;
+        const priorityB = rolePriority[b.role] ?? 99;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        // 같은 역할이면 가입일 내림차순
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
 
     return [...users].sort((a, b) => {
       let comparison = 0;
@@ -328,26 +345,12 @@ export default function MemberManagement() {
         <div className="text-center py-16 text-gray-500 dark:text-gray-400">{t('admin.noUsers')}</div>
       )}
 
-      {!isLoading && totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage(page - 1)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('common.prev')}
-          </button>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {page} / {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage(page + 1)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('common.next')}
-          </button>
-        </div>
+      {!isLoading && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

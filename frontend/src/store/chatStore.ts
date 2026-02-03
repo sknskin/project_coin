@@ -23,7 +23,7 @@ interface ChatState {
   // 데이터
   conversations: Conversation[];
   messages: Map<string, Message[]>;
-  unreadCounts: Map<string, number>;
+  unreadCounts: Record<string, number>;
   onlineUsers: Set<string>;
   typingUsers: Map<string, string[]>;
 
@@ -79,7 +79,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   chatSize: DEFAULT_CHAT_SIZE,
   conversations: [],
   messages: new Map(),
-  unreadCounts: new Map(),
+  unreadCounts: {},
   onlineUsers: new Set(),
   typingUsers: new Map(),
   isLoadingConversations: false,
@@ -102,10 +102,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   }),
 
   setConversations: (conversations) => {
-    const unreadCounts = new Map<string, number>();
+    const unreadCounts: Record<string, number> = {};
     conversations.forEach((conv) => {
       if (conv.unreadCount !== undefined) {
-        unreadCounts.set(conv.id, conv.unreadCount);
+        unreadCounts[conv.id] = conv.unreadCount;
       }
     });
     set({ conversations, unreadCounts });
@@ -140,6 +140,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return state;
       }
 
+      // 서버 메시지가 도착하면 같은 내용의 temp 메시지를 교체
+      let updated = existing;
+      if (!message.id.startsWith('temp-')) {
+        const tempIdx = existing.findIndex(
+          (m) => m.id.startsWith('temp-') && m.senderId === message.senderId && m.content === message.content
+        );
+        if (tempIdx !== -1) {
+          updated = [...existing];
+          updated[tempIdx] = message;
+          newMessages.set(conversationId, updated);
+
+          const conversations = [...state.conversations];
+          const idx = conversations.findIndex((c) => c.id === conversationId);
+          if (idx > -1) {
+            const [conv] = conversations.splice(idx, 1);
+            conv.messages = [message];
+            conv.updatedAt = message.createdAt;
+            conversations.unshift(conv);
+          }
+          return { messages: newMessages, conversations };
+        }
+      }
+
       newMessages.set(conversationId, [...existing, message]);
 
       // 대화 목록에서 해당 대화를 맨 위로 이동
@@ -163,38 +186,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return { messages: newMessagesMap };
     }),
 
-  setUnreadCounts: (counts) => set({ unreadCounts: new Map(Object.entries(counts)) }),
+  setUnreadCounts: (counts) => set({ unreadCounts: { ...counts } }),
 
   markConversationAsRead: (conversationId) =>
-    set((state) => {
-      const newCounts = new Map(state.unreadCounts);
-      newCounts.set(conversationId, 0);
-      return { unreadCounts: newCounts };
-    }),
+    set((state) => ({
+      unreadCounts: { ...state.unreadCounts, [conversationId]: 0 },
+    })),
 
   incrementUnreadCount: (conversationId) =>
-    set((state) => {
-      const newCounts = new Map(state.unreadCounts);
-      const current = newCounts.get(conversationId) || 0;
-      newCounts.set(conversationId, current + 1);
-      return { unreadCounts: newCounts };
-    }),
+    set((state) => ({
+      unreadCounts: {
+        ...state.unreadCounts,
+        [conversationId]: (state.unreadCounts[conversationId] || 0) + 1,
+      },
+    })),
 
   getTotalUnreadCount: () => {
     const counts = get().unreadCounts;
-    let total = 0;
-    counts.forEach((count) => (total += count));
-    return total;
+    return Object.values(counts).reduce((sum, c) => sum + c, 0);
   },
 
-  // 읽지 않은 메시지가 있는 대화 수 반환 (알림용)
   getConversationsWithUnreadCount: () => {
     const counts = get().unreadCounts;
-    let count = 0;
-    counts.forEach((unread) => {
-      if (unread > 0) count++;
-    });
-    return count;
+    return Object.values(counts).filter((c) => c > 0).length;
   },
 
   setUserOnline: (userId, isOnline) =>
@@ -234,7 +248,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       chatSize: DEFAULT_CHAT_SIZE,
       conversations: [],
       messages: new Map(),
-      unreadCounts: new Map(),
+      unreadCounts: {},
       onlineUsers: new Set(),
       typingUsers: new Map(),
       isLoadingConversations: false,

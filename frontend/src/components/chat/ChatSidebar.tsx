@@ -42,6 +42,23 @@ export default function ChatSidebar() {
     }
   }, [isChatOpen]);
 
+  // ESC 키로 채팅창 닫기
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isChatOpen) {
+        closeChat();
+      }
+    };
+
+    if (isChatOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isChatOpen, closeChat]);
+
   const loadConversations = async () => {
     setLoadingConversations(true);
     try {

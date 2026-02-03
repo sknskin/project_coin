@@ -1,8 +1,12 @@
+import { useMemo } from 'react';
 import { useChatStore } from '../../store/chatStore';
 
 export default function ChatIcon() {
-  const { toggleChat, getTotalUnreadCount } = useChatStore();
-  const unreadCount = getTotalUnreadCount();
+  const toggleChat = useChatStore((state) => state.toggleChat);
+  const unreadCounts = useChatStore((state) => state.unreadCounts);
+  const unreadCount = useMemo(() => {
+    return Object.values(unreadCounts).reduce((sum, c) => sum + c, 0);
+  }, [unreadCounts]);
 
   return (
     <button

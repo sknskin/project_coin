@@ -70,7 +70,10 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "registerSuccess": "Registration Complete",
-    "registerSuccessMessage": "Registration is complete. You can log in after admin approval."
+    "registerSuccessMessage": "Registration is complete. You can log in after admin approval.",
+    "rememberUsername": "Remember Username",
+    "loginFailedCount": "Login failed {{count}} times. If you fail 5 or more times, login will be restricted for 10 minutes.",
+    "loginBlocked": "Too many login attempts. Please try again in {{minutes}} minutes."
   },
   "dashboard": {
     "title": "Coin Price",

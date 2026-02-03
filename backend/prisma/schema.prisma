@@ -90,6 +90,21 @@ model LoginHistory {
   @@map("login_histories")
 }
 
+model LoginAttempt {
+  id          String   @id @default(uuid())
+  ipAddress   String   @map("ip_address")
+  attemptCount Int     @default(0) @map("attempt_count")
+  lastAttemptAt DateTime @default(now()) @map("last_attempt_at")
+  blockedUntil DateTime? @map("blocked_until")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([ipAddress])
+  @@index([ipAddress])
+  @@index([blockedUntil])
+  @@map("login_attempts")
+}
+
 model UpbitCredential {
   id              String   @id @default(uuid())
   userId          String   @unique @map("user_id")

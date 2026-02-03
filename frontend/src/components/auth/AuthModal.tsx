@@ -1,10 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../common/Modal';
 import ConfirmModal from '../common/ConfirmModal';
 import { useUIStore } from '../../store/uiStore';
 import { useAuth } from '../../hooks/useAuth';
 import { authApi } from '../../api/auth.api';
+
+// 한글 -> 영어 키보드 매핑
+const koreanToEnglish: { [key: string]: string } = {
+  'ㅂ': 'q', 'ㅈ': 'w', 'ㄷ': 'e', 'ㄱ': 'r', 'ㅅ': 't', 'ㅛ': 'y', 'ㅕ': 'u', 'ㅑ': 'i', 'ㅐ': 'o', 'ㅔ': 'p',
+  'ㅁ': 'a', 'ㄴ': 's', 'ㅇ': 'd', 'ㄹ': 'f', 'ㅎ': 'g', 'ㅗ': 'h', 'ㅓ': 'j', 'ㅏ': 'k', 'ㅣ': 'l',
+  'ㅋ': 'z', 'ㅌ': 'x', 'ㅊ': 'c', 'ㅍ': 'v', 'ㅠ': 'b', 'ㅜ': 'n', 'ㅡ': 'm',
+  'ㅃ': 'Q', 'ㅉ': 'W', 'ㄸ': 'E', 'ㄲ': 'R', 'ㅆ': 'T', 'ㅒ': 'O', 'ㅖ': 'P',
+  '가': 'rk', '나': 'sk', '다': 'ek', '라': 'fk', '마': 'ak', '바': 'qk', '사': 'tk', '아': 'dk', '자': 'wk', '차': 'ck', '카': 'zk', '타': 'xk', '파': 'vk', '하': 'gk',
+};
+
+// 한글 문자를 영어로 변환하는 함수
+const convertKoreanToEnglish = (text: string): string => {
+  let result = '';
+  for (const char of text) {
+    if (koreanToEnglish[char]) {
+      result += koreanToEnglish[char];
+    } else if (/[가-힣]/.test(char)) {
+      // 복잡한 한글 문자는 건너뛰고 영어/숫자만 유지
+      continue;
+    } else if (/^[a-zA-Z0-9@._\-+]$/.test(char)) {
+      result += char;
+    }
+  }
+  return result;
+};
 
 interface FormErrors {
   email?: string;
@@ -26,6 +51,11 @@ export default function AuthModal() {
   // 로그인 폼
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [rememberUsername, setRememberUsername] = useState(false);
+
+  // refs for focus management
+  const usernameInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // 회원가입 폼
   const [email, setEmail] = useState('');
@@ -49,6 +79,29 @@ export default function AuthModal() {
       setIsSuccessModalOpen(true);
     }
   }, [registerSuccess, registerData]);
+
+  // 모달이 열릴 때 저장된 아이디 불러오기 및 포커스 설정
+  useEffect(() => {
+    if (isAuthModalOpen && authModalMode === 'login') {
+      const savedUsername = localStorage.getItem('savedUsername');
+      const savedRemember = localStorage.getItem('rememberUsername') === 'true';
+
+      if (savedRemember && savedUsername) {
+        setEmailOrUsername(savedUsername);
+        setRememberUsername(true);
+        // 아이디가 저장되어 있으면 비밀번호 입력으로 포커스
+        setTimeout(() => {
+          passwordInputRef.current?.focus();
+        }, 100);
+      } else {
+        setRememberUsername(false);
+        // 아이디가 저장되어 있지 않으면 아이디 입력으로 포커스
+        setTimeout(() => {
+          usernameInputRef.current?.focus();
+        }, 100);
+      }
+    }
+  }, [isAuthModalOpen, authModalMode]);
 
   const validatePassword = (pwd: string): string | undefined => {
     if (pwd.length < 10) {
@@ -156,7 +209,33 @@ export default function AuthModal() {
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // 아이디 저장 처리
+    if (rememberUsername) {
+      localStorage.setItem('savedUsername', emailOrUsername);
+      localStorage.setItem('rememberUsername', 'true');
+    } else {
+      localStorage.removeItem('savedUsername');
+      localStorage.setItem('rememberUsername', 'false');
+    }
     login({ emailOrUsername, password: loginPassword });
+  };
+
+  // 아이디 입력 핸들러 (한글 -> 영어 자동 변환)
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 한글이 포함되어 있으면 영어로 변환
+    const converted = convertKoreanToEnglish(value);
+    // 영어, 숫자, 이메일 관련 특수문자만 허용
+    const filtered = converted.replace(/[^a-zA-Z0-9@._\-+]/g, '');
+    setEmailOrUsername(filtered);
+  };
+
+  // IME 조합 이벤트 처리 (한글 입력 완료 시 변환)
+  const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
+    const value = e.currentTarget.value;
+    const converted = convertKoreanToEnglish(value);
+    const filtered = converted.replace(/[^a-zA-Z0-9@._\-+]/g, '');
+    setEmailOrUsername(filtered);
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -216,32 +295,34 @@ export default function AuthModal() {
       isOpen={isAuthModalOpen}
       onClose={closeAuthModal}
       title={authModalMode === 'login' ? t('auth.login') : t('auth.register')}
+      size={authModalMode === 'register' ? 'lg' : 'md'}
     >
       {authModalMode === 'login' ? (
         <form onSubmit={handleLoginSubmit} className="space-y-4">
           <div>
-            <label htmlFor="emailOrUsername" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="emailOrUsername" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               {t('auth.emailOrUsername')}
             </label>
             <input
+              ref={usernameInputRef}
               type="text"
               id="emailOrUsername"
               value={emailOrUsername}
-              onChange={(e) => {
-                const val = e.target.value.replace(/[^a-zA-Z0-9@._\-+]/g, '');
-                setEmailOrUsername(val);
-              }}
+              onChange={handleUsernameChange}
+              onCompositionEnd={handleCompositionEnd}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
               autoComplete="username"
+              style={{ imeMode: 'disabled' }}
             />
           </div>
 
           <div>
-            <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               {t('auth.password')}
             </label>
             <input
+              ref={passwordInputRef}
               type="password"
               id="loginPassword"
               value={loginPassword}
@@ -250,6 +331,33 @@ export default function AuthModal() {
               required
               autoComplete="current-password"
             />
+          </div>
+
+          <div className="flex">
+            <label htmlFor="rememberUsername" className="inline-flex items-center cursor-pointer select-none group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  id="rememberUsername"
+                  checked={rememberUsername}
+                  onChange={(e) => setRememberUsername(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-4 h-4 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 peer-checked:bg-primary-600 peer-checked:border-primary-600 transition-colors peer-focus:ring-2 peer-focus:ring-primary-500 peer-focus:ring-offset-1 dark:peer-focus:ring-offset-gray-800">
+                  <svg
+                    className={`w-4 h-4 text-white ${rememberUsername ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
+                {t('auth.rememberUsername')}
+              </span>
+            </label>
           </div>
 
           {error && (
@@ -274,123 +382,165 @@ export default function AuthModal() {
           </p>
         </form>
       ) : (
-        <form onSubmit={handleRegisterSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto overflow-x-hidden pr-1">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.email')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              required
-              autoComplete="email"
-            />
-            {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
+        <form onSubmit={handleRegisterSubmit} className="space-y-3">
+          {/* 이메일, 아이디 - 2열 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.email')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                required
+                autoComplete="email"
+              />
+              {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.username')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={t('auth.usernameHint')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.username ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                required
+                autoComplete="username"
+              />
+              {formErrors.username && <p className="text-xs text-red-500 mt-1">{formErrors.username}</p>}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.username')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.username ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              required
-              autoComplete="username"
-            />
-            {formErrors.username && <p className="text-xs text-red-500 mt-1">{formErrors.username}</p>}
-            <p className="text-xs text-gray-500 mt-1">{t('auth.usernameHint')}</p>
+          {/* 비밀번호, 비밀번호 확인 - 2열 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.password')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t('auth.passwordHint')}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                required
+                autoComplete="new-password"
+              />
+              {formErrors.password && <p className="text-xs text-red-500 mt-1">{formErrors.password}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.passwordConfirm')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="passwordConfirm"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.passwordConfirm ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                required
+                autoComplete="new-password"
+              />
+              {formErrors.passwordConfirm && <p className="text-xs text-red-500 mt-1">{formErrors.passwordConfirm}</p>}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.password')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              required
-              autoComplete="new-password"
-            />
-            {formErrors.password && <p className="text-xs text-red-500 mt-1">{formErrors.password}</p>}
-            <p className="text-xs text-gray-500 mt-1">{t('auth.passwordHint')}</p>
+          {/* 성명, 닉네임 - 2열 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.name')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                required
+                autoComplete="name"
+              />
+              {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.nicknameOptional')}
+              </label>
+              <input
+                type="text"
+                id="nickname"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.nickname ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                autoComplete="nickname"
+              />
+              {formErrors.nickname && <p className="text-xs text-red-500 mt-1">{formErrors.nickname}</p>}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.passwordConfirm')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="password"
-              id="passwordConfirm"
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.passwordConfirm ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              required
-              autoComplete="new-password"
-            />
-            {formErrors.passwordConfirm && <p className="text-xs text-red-500 mt-1">{formErrors.passwordConfirm}</p>}
+          {/* 연락처, 주민등록번호 - 2열 */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.phone')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="01012345678"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                required
+                autoComplete="tel"
+                maxLength={11}
+              />
+              {formErrors.phone && <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="ssn" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('auth.ssn')} <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  id="ssnFirst"
+                  value={ssnFirst}
+                  onChange={(e) => setSsnFirst(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="900101"
+                  className={`flex-1 px-2 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.ssn ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  required
+                  maxLength={6}
+                />
+                <span className="text-gray-500">-</span>
+                <input
+                  type="password"
+                  id="ssnSecond"
+                  value={ssnSecond}
+                  onChange={(e) => setSsnSecond(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="*******"
+                  className={`flex-1 px-2 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.ssn ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  required
+                  maxLength={7}
+                />
+              </div>
+              {formErrors.ssn && <p className="text-xs text-red-500 mt-1">{formErrors.ssn}</p>}
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.name')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              required
-              autoComplete="name"
-            />
-            {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.nicknameOptional')}
-            </label>
-            <input
-              type="text"
-              id="nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.nickname ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              autoComplete="nickname"
-            />
-            {formErrors.nickname && <p className="text-xs text-red-500 mt-1">{formErrors.nickname}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.phone')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-              placeholder="01012345678"
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-              required
-              autoComplete="tel"
-              maxLength={11}
-            />
-            {formErrors.phone && <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>}
-            <p className="text-xs text-gray-500 mt-1">{t('auth.phoneHint')}</p>
-          </div>
-
+          {/* 주소 - 전체 너비 */}
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('auth.address')} <span className="text-red-500">*</span>
@@ -400,42 +550,11 @@ export default function AuthModal() {
               id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
               required
               autoComplete="street-address"
             />
             {formErrors.address && <p className="text-xs text-red-500 mt-1">{formErrors.address}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="ssn" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {t('auth.ssn')} <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                id="ssnFirst"
-                value={ssnFirst}
-                onChange={(e) => setSsnFirst(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="900101"
-                className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.ssn ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-                required
-                maxLength={6}
-              />
-              <span className="text-gray-500">-</span>
-              <input
-                type="password"
-                id="ssnSecond"
-                value={ssnSecond}
-                onChange={(e) => setSsnSecond(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="*******"
-                className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${formErrors.ssn ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
-                required
-                maxLength={7}
-              />
-            </div>
-            {formErrors.ssn && <p className="text-xs text-red-500 mt-1">{formErrors.ssn}</p>}
-            <p className="text-xs text-gray-500 mt-1">{t('auth.ssnHint')}</p>
           </div>
 
           {error && (

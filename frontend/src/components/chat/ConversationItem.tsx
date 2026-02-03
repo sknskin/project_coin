@@ -20,7 +20,7 @@ export default function ConversationItem({ conversation }: ConversationItemProps
     otherParticipant?.user.nickname || otherParticipant?.user.email || t('chat.unknown');
 
   const lastMessage = conversation.messages[0];
-  const unreadCount = unreadCounts.get(conversation.id) || 0;
+  const unreadCount = unreadCounts[conversation.id] || 0;
   const isOnline = otherParticipant
     ? onlineUsers.has(otherParticipant.userId)
     : false;

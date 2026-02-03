@@ -9,15 +9,18 @@ const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 export function useChatWebSocket() {
   const socketRef = useRef<Socket | null>(null);
   const { accessToken, isAuthenticated, user } = useAuthStore();
-  const {
-    addMessage,
-    addConversation,
-    incrementUnreadCount,
-    markConversationAsRead,
-    setUserOnline,
-    setTyping,
-    activeConversationId,
-  } = useChatStore();
+  const storeRef = useRef(useChatStore.getState());
+  const activeConversationIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const unsub = useChatStore.subscribe((state) => {
+      storeRef.current = state;
+      activeConversationIdRef.current = state.activeConversationId;
+    });
+    storeRef.current = useChatStore.getState();
+    activeConversationIdRef.current = useChatStore.getState().activeConversationId;
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
@@ -40,19 +43,20 @@ export function useChatWebSocket() {
     });
 
     socket.on('message:new', (message: Message) => {
-      addMessage(message.conversationId, message);
+      const store = useChatStore.getState();
+      store.addMessage(message.conversationId, message);
 
       // 현재 보고 있는 대화가 아니고, 내가 보낸 메시지가 아니면 읽지 않은 카운트 증가
       if (
-        message.conversationId !== activeConversationId &&
+        message.conversationId !== activeConversationIdRef.current &&
         message.senderId !== user?.id
       ) {
-        incrementUnreadCount(message.conversationId);
+        store.incrementUnreadCount(message.conversationId);
       }
     });
 
     socket.on('conversation:new', (conversation: Conversation) => {
-      addConversation(conversation);
+      useChatStore.getState().addConversation(conversation);
     });
 
     socket.on(
@@ -65,7 +69,6 @@ export function useChatWebSocket() {
         userId: string;
         readAt: string;
       }) => {
-        // 다른 사용자가 읽었을 때 UI 업데이트 (필요시)
         console.log(`User ${userId} read conversation ${conversationId}`);
       }
     );
@@ -73,7 +76,7 @@ export function useChatWebSocket() {
     socket.on(
       'user:status',
       ({ userId, isOnline }: { userId: string; isOnline: boolean }) => {
-        setUserOnline(userId, isOnline);
+        useChatStore.getState().setUserOnline(userId, isOnline);
       }
     );
 
@@ -86,7 +89,7 @@ export function useChatWebSocket() {
         conversationId: string;
         userId: string;
       }) => {
-        setTyping(conversationId, userId, true);
+        useChatStore.getState().setTyping(conversationId, userId, true);
       }
     );
 
@@ -99,7 +102,7 @@ export function useChatWebSocket() {
         conversationId: string;
         userId: string;
       }) => {
-        setTyping(conversationId, userId, false);
+        useChatStore.getState().setTyping(conversationId, userId, false);
       }
     );
 
@@ -118,14 +121,15 @@ export function useChatWebSocket() {
   }, [isAuthenticated, accessToken, user?.id]);
 
   // activeConversationId가 변경될 때 자동으로 읽음 처리
+  const activeConversationId = useChatStore((state) => state.activeConversationId);
   useEffect(() => {
     if (activeConversationId && socketRef.current?.connected) {
       socketRef.current.emit('message:read', {
         conversationId: activeConversationId,
       });
-      markConversationAsRead(activeConversationId);
+      useChatStore.getState().markConversationAsRead(activeConversationId);
     }
-  }, [activeConversationId, markConversationAsRead]);
+  }, [activeConversationId]);
 
   const sendMessage = useCallback(
     (conversationId: string, content: string) => {
@@ -140,10 +144,10 @@ export function useChatWebSocket() {
     (conversationId: string) => {
       if (socketRef.current?.connected) {
         socketRef.current.emit('message:read', { conversationId });
-        markConversationAsRead(conversationId);
+        useChatStore.getState().markConversationAsRead(conversationId);
       }
     },
-    [markConversationAsRead]
+    []
   );
 
   const startTyping = useCallback((conversationId: string) => {

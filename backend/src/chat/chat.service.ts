@@ -94,12 +94,27 @@ export class ChatService {
 
     for (const p of participants) {
       if (!this.chatGateway.isUserOnline(p.userId)) {
-        await this.notificationService.create(p.userId, {
-          type: NotificationType.CHAT,
-          title: '새 메시지',
-          message: `${message.sender.nickname || message.sender.email}님이 메시지를 보냈습니다.`,
-          data: { conversationId, messageId: message.id },
+        // 같은 대화에서 아직 읽지 않은 CHAT 알림이 있으면 새로 생성하지 않음
+        const existingNotification = await this.prisma.notification.findFirst({
+          where: {
+            userId: p.userId,
+            type: NotificationType.CHAT,
+            isRead: false,
+            data: {
+              path: ['conversationId'],
+              equals: conversationId,
+            },
+          },
         });
+
+        if (!existingNotification) {
+          await this.notificationService.create(p.userId, {
+            type: NotificationType.CHAT,
+            title: '새 메시지',
+            message: `${message.sender.nickname || message.sender.email}님이 메시지를 보냈습니다.`,
+            data: { conversationId, messageId: message.id },
+          });
+        }
       }
     }
 

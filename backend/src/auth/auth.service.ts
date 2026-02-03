@@ -51,6 +51,11 @@ const SESSION_DURATION_BY_ROLE: Record<UserRole, number> = {
   SYSTEM: 240,
 };
 
+// 로그인 시도 제한 설정
+const MAX_LOGIN_ATTEMPTS = 5;
+const BLOCK_DURATION_MINUTES = 10;
+const WARNING_THRESHOLD = 3;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -152,6 +157,18 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string): Promise<AuthResponse> {
+    // IP 기반 로그인 차단 확인
+    if (ipAddress) {
+      const blockStatus = await this.checkLoginBlock(ipAddress);
+      if (blockStatus.isBlocked) {
+        throw new ForbiddenException({
+          message: `로그인 시도가 너무 많습니다. ${blockStatus.remainingMinutes}분 후에 다시 시도해주세요.`,
+          code: 'LOGIN_BLOCKED',
+          remainingMinutes: blockStatus.remainingMinutes,
+        });
+      }
+    }
+
     // 이메일 또는 아이디로 사용자 찾기
     const user = await this.prisma.user.findFirst({
       where: {
@@ -163,6 +180,10 @@ export class AuthService {
     });
 
     if (!user) {
+      // 로그인 실패 기록 (사용자를 찾지 못한 경우도 실패로 기록)
+      if (ipAddress) {
+        await this.recordLoginAttempt(ipAddress, false);
+      }
       throw new UnauthorizedException('이메일/아이디 또는 비밀번호가 올바르지 않습니다.');
     }
 
@@ -170,6 +191,31 @@ export class AuthService {
 
     if (!isPasswordValid) {
       await this.recordLoginHistory(user.id, ipAddress, userAgent, false);
+
+      // 로그인 실패 시도 기록 및 경고/차단 처리
+      if (ipAddress) {
+        const attemptResult = await this.recordLoginAttempt(ipAddress, false);
+
+        // 5회 이상 실패 시 차단하고 관리자에게 알림
+        if (attemptResult.attemptCount >= MAX_LOGIN_ATTEMPTS) {
+          await this.notifyAdminsAboutLoginBlock(ipAddress, attemptResult.attemptCount);
+          throw new ForbiddenException({
+            message: `로그인 시도가 너무 많습니다. ${BLOCK_DURATION_MINUTES}분 후에 다시 시도해주세요.`,
+            code: 'LOGIN_BLOCKED',
+            remainingMinutes: BLOCK_DURATION_MINUTES,
+          });
+        }
+
+        // 3회 이상 실패 시 경고 메시지
+        if (attemptResult.attemptCount >= WARNING_THRESHOLD) {
+          throw new UnauthorizedException({
+            message: `로그인에 ${attemptResult.attemptCount}회 실패하였습니다. 5회 이상 실패하는 경우 로그인이 10분동안 제한됩니다.`,
+            code: 'LOGIN_WARNING',
+            failedCount: attemptResult.attemptCount,
+          });
+        }
+      }
+
       throw new UnauthorizedException('이메일/아이디 또는 비밀번호가 올바르지 않습니다.');
     }
 
@@ -185,6 +231,11 @@ export class AuthService {
     // 비활성화된 사용자 체크
     if (user.status === UserStatus.INACTIVE) {
       throw new ForbiddenException('비활성화된 계정입니다. 관리자에게 문의해주세요.');
+    }
+
+    // 로그인 성공 - 실패 횟수 초기화
+    if (ipAddress) {
+      await this.recordLoginAttempt(ipAddress, true);
     }
 
     // 성공한 로그인 기록 및 lastLoginAt 업데이트
@@ -352,5 +403,106 @@ export class AuthService {
         isSuccess,
       },
     });
+  }
+
+  // IP 기반 로그인 차단 확인
+  private async checkLoginBlock(ipAddress: string): Promise<{ isBlocked: boolean; remainingMinutes: number }> {
+    const attempt = await this.prisma.loginAttempt.findUnique({
+      where: { ipAddress },
+    });
+
+    if (!attempt || !attempt.blockedUntil) {
+      return { isBlocked: false, remainingMinutes: 0 };
+    }
+
+    const now = new Date();
+    if (attempt.blockedUntil > now) {
+      const remainingMs = attempt.blockedUntil.getTime() - now.getTime();
+      const remainingMinutes = Math.ceil(remainingMs / (1000 * 60));
+      return { isBlocked: true, remainingMinutes };
+    }
+
+    // 차단 시간이 지났으면 초기화
+    await this.prisma.loginAttempt.update({
+      where: { ipAddress },
+      data: {
+        attemptCount: 0,
+        blockedUntil: null,
+      },
+    });
+
+    return { isBlocked: false, remainingMinutes: 0 };
+  }
+
+  // 로그인 시도 기록
+  private async recordLoginAttempt(ipAddress: string, isSuccess: boolean): Promise<{ attemptCount: number }> {
+    if (isSuccess) {
+      // 로그인 성공 시 시도 횟수 초기화
+      await this.prisma.loginAttempt.upsert({
+        where: { ipAddress },
+        create: {
+          ipAddress,
+          attemptCount: 0,
+          lastAttemptAt: new Date(),
+        },
+        update: {
+          attemptCount: 0,
+          blockedUntil: null,
+          lastAttemptAt: new Date(),
+        },
+      });
+      return { attemptCount: 0 };
+    }
+
+    // 로그인 실패 시 시도 횟수 증가
+    const attempt = await this.prisma.loginAttempt.upsert({
+      where: { ipAddress },
+      create: {
+        ipAddress,
+        attemptCount: 1,
+        lastAttemptAt: new Date(),
+      },
+      update: {
+        attemptCount: { increment: 1 },
+        lastAttemptAt: new Date(),
+      },
+    });
+
+    // 5회 이상 실패 시 10분 차단
+    if (attempt.attemptCount >= MAX_LOGIN_ATTEMPTS) {
+      const blockedUntil = new Date();
+      blockedUntil.setMinutes(blockedUntil.getMinutes() + BLOCK_DURATION_MINUTES);
+
+      await this.prisma.loginAttempt.update({
+        where: { ipAddress },
+        data: { blockedUntil },
+      });
+    }
+
+    return { attemptCount: attempt.attemptCount };
+  }
+
+  // 로그인 차단 시 관리자에게 알림
+  private async notifyAdminsAboutLoginBlock(ipAddress: string, attemptCount: number) {
+    try {
+      const admins = await this.prisma.user.findMany({
+        where: {
+          role: { in: [UserRole.ADMIN, UserRole.SYSTEM] },
+          status: UserStatus.ACTIVE,
+        },
+        select: { id: true },
+      });
+
+      for (const admin of admins) {
+        await this.notificationService.create(admin.id, {
+          type: NotificationType.SYSTEM,
+          title: '로그인 시도 차단 알림',
+          message: `IP ${ipAddress}에서 ${attemptCount}회 로그인 실패로 10분간 차단되었습니다.`,
+          data: { ipAddress, attemptCount, type: 'login_blocked' },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to notify admins about login block:', error);
+    }
   }
 }

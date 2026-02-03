@@ -28,6 +28,7 @@ export default function ChatWindow({
     messages,
     typingUsers,
     setMessages,
+    addMessage,
     setActiveConversation,
     isLoadingMessages,
     setLoadingMessages,
@@ -76,6 +77,19 @@ export default function ChatWindow({
   };
 
   const handleSend = (content: string) => {
+    // 낙관적 업데이트: 전송 즉시 메시지를 로컬에 추가
+    if (user) {
+      const optimisticMessage: import('../../types/chat.types').Message = {
+        id: `temp-${Date.now()}`,
+        conversationId,
+        senderId: user.id,
+        sender: { id: user.id, email: user.email || '', nickname: user.nickname || '' },
+        content,
+        createdAt: new Date().toISOString(),
+        isDeleted: false,
+      };
+      addMessage(conversationId, optimisticMessage);
+    }
     onSendMessage(conversationId, content);
   };
 

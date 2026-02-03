@@ -6,9 +6,17 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   autoFocus?: boolean;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export default function Modal({ isOpen, onClose, title, children, autoFocus = true }: ModalProps) {
+const sizeClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl',
+};
+
+export default function Modal({ isOpen, onClose, title, children, autoFocus = true, size = 'md' }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<Element | null>(null);
   const savedScrollY = useRef<number | null>(null);
@@ -86,7 +94,7 @@ export default function Modal({ isOpen, onClose, title, children, autoFocus = tr
       />
       <div
         ref={modalRef}
-        className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-xl ${sizeClasses[size]} w-full mx-4 max-h-[90vh] overflow-y-auto`}
       >
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">

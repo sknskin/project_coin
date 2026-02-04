@@ -16,6 +16,7 @@ export interface Notification {
     conversationId?: string;
     messageId?: string;
     userId?: string;
+    announcementId?: string;
     type?: string;
     [key: string]: unknown;
   };

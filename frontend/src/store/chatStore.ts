@@ -217,7 +217,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return Object.values(counts).filter((c) => c > 0).length;
   },
 
-  updateMessageReadStatus: (conversationId, readUserId, readAt, readStatus) =>
+  updateMessageReadStatus: (conversationId, _readUserId, _readAt, readStatus) =>
     set((state) => {
       const newMessages = new Map(state.messages);
       const msgs = newMessages.get(conversationId);

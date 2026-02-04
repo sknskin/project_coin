@@ -139,6 +139,21 @@ export default function NotificationDetailModal({
             {t('notification.viewPortfolio')}
           </button>
         );
+      case 'ANNOUNCEMENT':
+        if (notification.data.announcementId) {
+          return (
+            <button
+              onClick={() => {
+                navigate(`/announcements/${notification.data!.announcementId}`);
+                onClose();
+              }}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm"
+            >
+              {t('notification.viewAnnouncement')}
+            </button>
+          );
+        }
+        return null;
       default:
         return null;
     }

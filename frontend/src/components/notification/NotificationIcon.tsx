@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '../../store/notificationStore';
 import { useChatStore } from '../../store/chatStore';
 import NotificationDropdown from './NotificationDropdown';
@@ -7,6 +8,7 @@ import type { Notification } from '../../types/notification.types';
 
 export default function NotificationIcon() {
   const { unreadCount, isDropdownOpen, setDropdownOpen } = useNotificationStore();
+  const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
@@ -34,6 +36,11 @@ export default function NotificationIcon() {
       const { openChat, setActiveConversation } = useChatStore.getState();
       openChat();
       setActiveConversation(notification.data.conversationId);
+      return;
+    }
+    if (notification.type === 'ANNOUNCEMENT' && notification.data?.announcementId) {
+      setDropdownOpen(false);
+      navigate(`/announcements/${notification.data.announcementId}`);
       return;
     }
     setSelectedNotification(notification);

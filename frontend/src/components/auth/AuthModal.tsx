@@ -296,6 +296,7 @@ export default function AuthModal() {
       onClose={closeAuthModal}
       title={authModalMode === 'login' ? t('auth.login') : t('auth.register')}
       size={authModalMode === 'register' ? 'xl' : 'md'}
+      autoFocus={false}
     >
       {authModalMode === 'login' ? (
         <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -326,7 +327,7 @@ export default function AuthModal() {
               type="password"
               id="loginPassword"
               value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
+              onChange={(e) => setLoginPassword(e.target.value.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''))}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               required
               autoComplete="current-password"
@@ -429,7 +430,7 @@ export default function AuthModal() {
                 type="password"
                 id="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''))}
                 placeholder={t('auth.passwordHint')}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 required
@@ -446,7 +447,7 @@ export default function AuthModal() {
                 type="password"
                 id="passwordConfirm"
                 value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
+                onChange={(e) => setPasswordConfirm(e.target.value.replace(/[ㄱ-ㅎㅏ-ㅣ가-힣]/g, ''))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm ${formErrors.passwordConfirm ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                 required
                 autoComplete="new-password"

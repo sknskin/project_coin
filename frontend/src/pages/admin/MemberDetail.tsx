@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin.api';
+import { useAuthStore } from '../../store/authStore';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import type { UserRole, UserStatus, LoginHistory } from '../../types/admin.types';
 
@@ -11,6 +12,7 @@ export default function MemberDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -25,7 +27,8 @@ export default function MemberDetail() {
     enabled: !!id,
   });
 
-  const user = data?.data;
+  const userData = data?.data;
+  const isSystem = user?.role === 'SYSTEM';
 
   const approveMutation = useMutation({
     mutationFn: () => adminApi.approveUser(id!, selectedRole),
@@ -75,8 +78,8 @@ export default function MemberDetail() {
   };
 
   const handleStatusConfirm = () => {
-    if (!user) return;
-    const newStatus: UserStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    if (!userData) return;
+    const newStatus: UserStatus = userData.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     statusMutation.mutate(newStatus);
   };
 
@@ -128,7 +131,7 @@ export default function MemberDetail() {
     );
   }
 
-  if (!user) {
+  if (!userData) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-red-600">{t('admin.userNotFound')}</p>
@@ -149,7 +152,7 @@ export default function MemberDetail() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.memberDetail')}</h1>
         </div>
         <div className="flex items-center justify-between mt-1 min-h-[36px]">
-          <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
+          <p className="text-gray-600 dark:text-gray-400">{userData.email}</p>
         </div>
       </div>
 
@@ -158,13 +161,13 @@ export default function MemberDetail() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
           {[
-            { label: t('admin.email'), value: user.email },
-            { label: t('admin.username'), value: user.username },
-            { label: t('admin.name'), value: user.name },
-            { label: t('admin.nickname'), value: user.nickname || '-' },
-            { label: t('admin.phone'), value: user.phone || '-' },
-            { label: t('admin.address'), value: user.address || '-' },
-            { label: t('admin.ssn'), value: user.ssnMasked || '-' },
+            { label: t('admin.email'), value: userData.email },
+            { label: t('admin.username'), value: userData.username },
+            { label: t('admin.name'), value: userData.name },
+            { label: t('admin.nickname'), value: userData.nickname || '-' },
+            { label: t('admin.phone'), value: userData.phone || '-' },
+            { label: t('admin.address'), value: userData.address || '-' },
+            { label: t('admin.ssn'), value: userData.ssnMasked || '-' },
           ].map((item) => (
             <div key={item.label} className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
               <span className="w-28 text-sm font-medium text-gray-500 dark:text-gray-400">{item.label}</span>
@@ -174,20 +177,20 @@ export default function MemberDetail() {
 
           <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
             <span className="w-28 text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.role')}</span>
-            {getBadge('role', user.role)}
+            {getBadge('role', userData.role)}
           </div>
           <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
             <span className="w-28 text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.status')}</span>
-            {getBadge('status', user.status)}
+            {getBadge('status', userData.status)}
           </div>
           <div className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
             <span className="w-28 text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.approval')}</span>
-            {getBadge('approval', user.approvalStatus)}
+            {getBadge('approval', userData.approvalStatus)}
           </div>
 
           {[
-            { label: t('admin.joinDate'), value: formatDate(user.createdAt) },
-            { label: t('admin.lastLogin'), value: formatDate(user.lastLoginAt || undefined) },
+            { label: t('admin.joinDate'), value: formatDate(userData.createdAt) },
+            { label: t('admin.lastLogin'), value: formatDate(userData.lastLoginAt || undefined) },
           ].map((item) => (
             <div key={item.label} className="flex items-center py-2 border-b border-gray-100 dark:border-gray-700">
               <span className="w-28 text-sm font-medium text-gray-500 dark:text-gray-400">{item.label}</span>
@@ -196,15 +199,15 @@ export default function MemberDetail() {
           ))}
         </div>
 
-        {user.approvalStatus === 'REJECTED' && (
+        {userData.approvalStatus === 'REJECTED' && (
           <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <h3 className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">{t('admin.rejectInfo')}</h3>
             <p className="text-sm text-red-700 dark:text-red-400">
-              <strong>{t('admin.rejectedAt')}:</strong> {formatDate(user.rejectedAt || undefined)}
+              <strong>{t('admin.rejectedAt')}:</strong> {formatDate(userData.rejectedAt || undefined)}
             </p>
-            {user.rejectReason && (
+            {userData.rejectReason && (
               <p className="text-sm text-red-700 dark:text-red-400 mt-1">
-                <strong>{t('admin.rejectReason')}:</strong> {user.rejectReason}
+                <strong>{t('admin.rejectReason')}:</strong> {userData.rejectReason}
               </p>
             )}
           </div>
@@ -215,7 +218,7 @@ export default function MemberDetail() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('admin.actions')}</h2>
 
         <div className="flex flex-wrap gap-2">
-          {user.approvalStatus === 'PENDING' && (
+          {userData.approvalStatus === 'PENDING' && (
             <>
               <button
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -232,13 +235,24 @@ export default function MemberDetail() {
             </>
           )}
 
-          {user.approvalStatus === 'APPROVED' && (
+          {userData.approvalStatus === 'APPROVED' && (
             <button
               className="px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={handleToggleStatus}
             >
-              {user.status === 'ACTIVE' ? t('admin.deactivate') : t('admin.activate')}
+              {userData.status === 'ACTIVE' ? t('admin.deactivate') : t('admin.activate')}
             </button>
+          )}
+
+          {userData.approvalStatus === 'REJECTED' && isSystem && (
+            <>
+            <button
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                onClick={() => setShowApprovalModal(true)}
+              >
+                {t('admin.approve')}
+              </button>
+            </>
           )}
 
           <button
@@ -250,11 +264,11 @@ export default function MemberDetail() {
         </div>
       </div>
 
-      {user.loginHistories && user.loginHistories.length > 0 && (
+      {userData.loginHistories && userData.loginHistories.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('admin.loginHistory')}</h2>
           <div className="space-y-2">
-            {user.loginHistories.slice(0, 10).map((history: LoginHistory, index: number) => (
+            {userData.loginHistories.slice(0, 10).map((history: LoginHistory, index: number) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 text-sm">
                 <span className="text-gray-900 dark:text-white">{formatDate(history.loginAt)}</span>
                 <span className="text-gray-500 dark:text-gray-400">{history.ipAddress || '-'}</span>
@@ -350,7 +364,7 @@ export default function MemberDetail() {
         isOpen={showStatusModal}
         onClose={() => setShowStatusModal(false)}
         onConfirm={handleStatusConfirm}
-        title={user?.status === 'ACTIVE' ? t('admin.deactivate') : t('admin.activate')}
+        title={userData?.status === 'ACTIVE' ? t('admin.deactivate') : t('admin.activate')}
         message={t('admin.confirmStatusChange')}
         confirmText={t('common.confirm')}
         cancelText={t('common.cancel')}

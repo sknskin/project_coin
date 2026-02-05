@@ -29,6 +29,18 @@ class TrackVisitorDto {
   referrer?: string;
 }
 
+class PeriodStatsQueryDto {
+  @IsString()
+  startDate: string;
+
+  @IsString()
+  endDate: string;
+
+  @IsOptional()
+  @IsString()
+  period?: string;
+}
+
 @Controller('statistics')
 export class StatisticsController {
   constructor(private statisticsService: StatisticsService) {}
@@ -63,6 +75,17 @@ export class StatisticsController {
     );
   }
 
+  @Get('historical/period')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getHistoricalByPeriod(@Query() query: PeriodStatsQueryDto) {
+    return this.statisticsService.getHistoricalByPeriod(
+      new Date(query.startDate),
+      new Date(query.endDate),
+      (query.period as 'daily' | 'monthly' | 'yearly') || 'daily',
+    );
+  }
+
   @Get('logins')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -86,6 +109,60 @@ export class StatisticsController {
     return this.statisticsService.getRegistrationStats(
       new Date(startDate),
       new Date(endDate),
+    );
+  }
+
+  @Get('announcements')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getAnnouncementStats(@Query() query: PeriodStatsQueryDto) {
+    return this.statisticsService.getAnnouncementStats(
+      new Date(query.startDate),
+      new Date(query.endDate),
+      (query.period as 'daily' | 'monthly' | 'yearly') || 'daily',
+    );
+  }
+
+  @Get('announcements/totals')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getAnnouncementTotals() {
+    return this.statisticsService.getAnnouncementTotals();
+  }
+
+  @Get('chat')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getChatStats(@Query() query: PeriodStatsQueryDto) {
+    return this.statisticsService.getChatStats(
+      new Date(query.startDate),
+      new Date(query.endDate),
+      (query.period as 'daily' | 'monthly' | 'yearly') || 'daily',
+    );
+  }
+
+  @Get('chat/totals')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getChatTotals() {
+    return this.statisticsService.getChatTotals();
+  }
+
+  @Get('users/detail')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getUserDetailStats() {
+    return this.statisticsService.getUserDetailStats();
+  }
+
+  @Get('notifications')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getNotificationStats(@Query() query: PeriodStatsQueryDto) {
+    return this.statisticsService.getNotificationStats(
+      new Date(query.startDate),
+      new Date(query.endDate),
+      (query.period as 'daily' | 'monthly' | 'yearly') || 'daily',
     );
   }
 }

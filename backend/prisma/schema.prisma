@@ -301,6 +301,19 @@ model DailyStatistics {
   pageViewCount   Int      @default(0) @map("page_view_count")
   activeUserCount Int      @default(0) @map("active_user_count")
 
+  // 공지사항 통계
+  newAnnouncementCount     Int @default(0) @map("new_announcement_count")
+  announcementCommentCount Int @default(0) @map("announcement_comment_count")
+  announcementLikeCount    Int @default(0) @map("announcement_like_count")
+
+  // 채팅 통계
+  messageCount            Int @default(0) @map("message_count")
+  activeConversationCount Int @default(0) @map("active_conversation_count")
+
+  // 알림 통계
+  notificationCount     Int @default(0) @map("notification_count")
+  notificationReadCount Int @default(0) @map("notification_read_count")
+
   @@map("daily_statistics")
 }
 

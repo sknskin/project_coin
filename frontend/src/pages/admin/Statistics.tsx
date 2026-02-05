@@ -46,7 +46,7 @@ export default function Statistics() {
   // WebSocket for real-time updates
   useEffect(() => {
     const socket: Socket = io(
-      `${import.meta.env.VITE_WS_URL || 'http://localhost:3000'}/statistics`,
+      `${import.meta.env.VITE_WS_URL || 'http://localhost:3001'}/statistics`,
       {
         path: '/socket.io',
         transports: ['websocket'],

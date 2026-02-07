@@ -90,7 +90,7 @@ export function useChatWebSocket() {
       useChatStore.getState().removeConversation(conversationId);
     });
 
-    socket.on('conversation:userLeft', ({ conversationId, userId }: { conversationId: string; userId: string }) => {
+    socket.on('conversation:userLeft', ({ conversationId }: { conversationId: string }) => {
       // 다른 사용자가 나간 경우, 대화 목록을 새로고침하여 참여자 정보 업데이트
       chatApi.getConversations().then((res) => {
         const conversation = res.data.find((c) => c.id === conversationId);

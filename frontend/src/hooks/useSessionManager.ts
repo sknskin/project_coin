@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useSessionStore } from '../store/sessionStore';
 import { useAuth } from './useAuth';
@@ -7,6 +8,7 @@ import { authApi } from '../api/auth.api';
 const WARNING_THRESHOLDS = [10 * 60, 5 * 60, 1 * 60]; // 10min, 5min, 1min (seconds)
 
 export function useSessionManager() {
+  const navigate = useNavigate();
   const { isAuthenticated, accessToken } = useAuthStore();
   const {
     sessionExpiresAt,
@@ -24,6 +26,23 @@ export function useSessionManager() {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initializedRef = useRef(false);
+  const isLoggingOutRef = useRef(false);
+
+  // Force logout and redirect to home
+  const forceLogout = useCallback(() => {
+    if (isLoggingOutRef.current) return;
+    isLoggingOutRef.current = true;
+
+    closeSessionWarning();
+    endSession();
+    logout();
+    navigate('/', { replace: true });
+
+    // Reset flag after a short delay
+    setTimeout(() => {
+      isLoggingOutRef.current = false;
+    }, 1000);
+  }, [closeSessionWarning, endSession, logout, navigate]);
 
   // Start session on login
   useEffect(() => {
@@ -65,14 +84,13 @@ export function useSessionManager() {
     };
   }, [isAuthenticated, sessionExpiresAt, updateRemainingTime]);
 
-  // Show warning modal and handle session expiry
+  // Handle session expiry - check when remainingSeconds changes
   useEffect(() => {
     if (!isAuthenticated || !sessionExpiresAt) return;
 
-    // Session expired
-    if (remainingSeconds === 0 && sessionExpiresAt && Date.now() >= sessionExpiresAt) {
-      logout();
-      endSession();
+    // Session expired - force logout
+    if (remainingSeconds <= 0) {
+      forceLogout();
       return;
     }
 
@@ -88,9 +106,36 @@ export function useSessionManager() {
         break;
       }
     }
-  }, [remainingSeconds, isAuthenticated, sessionExpiresAt, lastWarningThreshold, logout, endSession, openSessionWarning, setLastWarningThreshold]);
+  }, [remainingSeconds, isAuthenticated, sessionExpiresAt, lastWarningThreshold, forceLogout, openSessionWarning, setLastWarningThreshold]);
+
+  // Also check on visibility change (when user returns to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated && sessionExpiresAt) {
+        // Immediately update remaining time when tab becomes visible
+        updateRemainingTime();
+
+        // Check if session has expired while tab was hidden
+        const now = Date.now();
+        if (now >= sessionExpiresAt) {
+          forceLogout();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, sessionExpiresAt, updateRemainingTime, forceLogout]);
 
   const handleExtend = useCallback(async () => {
+    // Don't allow extend if session already expired
+    if (remainingSeconds <= 0) {
+      forceLogout();
+      return;
+    }
+
     try {
       const response = await authApi.refresh();
       if (response.accessToken) {
@@ -100,9 +145,9 @@ export function useSessionManager() {
       closeSessionWarning();
     } catch (error) {
       console.error('Failed to extend session:', error);
-      logout();
+      forceLogout();
     }
-  }, [startSession, closeSessionWarning, logout]);
+  }, [remainingSeconds, startSession, closeSessionWarning, forceLogout]);
 
   const handleDismiss = useCallback(() => {
     closeSessionWarning();

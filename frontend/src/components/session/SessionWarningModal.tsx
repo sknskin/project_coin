@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Modal from '../common/Modal';
 import { useSessionStore } from '../../store/sessionStore';
@@ -10,9 +10,11 @@ interface SessionWarningModalProps {
 
 export default function SessionWarningModal({ onExtend, onDismiss }: SessionWarningModalProps) {
   const { t } = useTranslation();
-  const { isSessionWarningOpen, remainingSeconds } = useSessionStore();
+  const { isSessionWarningOpen, remainingSeconds, sessionExpiresAt } = useSessionStore();
+  const autoLogoutTriggeredRef = useRef(false);
 
-  const isExpired = remainingSeconds <= 0;
+  // Check expiry using actual timestamp
+  const isExpired = sessionExpiresAt ? Date.now() >= sessionExpiresAt : false;
 
   const formatTime = (seconds: number): string => {
     if (seconds <= 0) return '00:00';
@@ -21,9 +23,17 @@ export default function SessionWarningModal({ onExtend, onDismiss }: SessionWarn
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Reset auto-logout flag when modal opens
+  useEffect(() => {
+    if (isSessionWarningOpen) {
+      autoLogoutTriggeredRef.current = false;
+    }
+  }, [isSessionWarningOpen]);
+
   // Auto-trigger extend check when expired (the hook will handle logout)
   useEffect(() => {
-    if (isExpired && isSessionWarningOpen) {
+    if (isExpired && isSessionWarningOpen && !autoLogoutTriggeredRef.current) {
+      autoLogoutTriggeredRef.current = true;
       // Give a short delay for the user to see 00:00, then the hook will handle logout
       const timer = setTimeout(() => {
         onExtend(); // This will trigger forceLogout in the hook

@@ -88,8 +88,9 @@ export function useSessionManager() {
   useEffect(() => {
     if (!isAuthenticated || !sessionExpiresAt) return;
 
-    // Session expired - force logout
-    if (remainingSeconds <= 0) {
+    // Session expired - force logout (check actual timestamp to be safe)
+    const now = Date.now();
+    if (remainingSeconds <= 0 && now >= sessionExpiresAt) {
       forceLogout();
       return;
     }
@@ -130,8 +131,8 @@ export function useSessionManager() {
   }, [isAuthenticated, sessionExpiresAt, updateRemainingTime, forceLogout]);
 
   const handleExtend = useCallback(async () => {
-    // Don't allow extend if session already expired
-    if (remainingSeconds <= 0) {
+    // Don't allow extend if session already expired (check actual timestamp)
+    if (sessionExpiresAt && Date.now() >= sessionExpiresAt) {
       forceLogout();
       return;
     }
@@ -147,7 +148,7 @@ export function useSessionManager() {
       console.error('Failed to extend session:', error);
       forceLogout();
     }
-  }, [remainingSeconds, startSession, closeSessionWarning, forceLogout]);
+  }, [sessionExpiresAt, startSession, closeSessionWarning, forceLogout]);
 
   const handleDismiss = useCallback(() => {
     closeSessionWarning();

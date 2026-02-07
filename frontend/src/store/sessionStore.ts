@@ -25,8 +25,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   startSession: (accessToken: string) => {
     const expiresAt = getTokenExpiration(accessToken);
     if (expiresAt) {
+      const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
       set({
         sessionExpiresAt: expiresAt,
+        remainingSeconds: remaining,
         isSessionWarningOpen: false,
         lastWarningThreshold: null,
       });
@@ -36,8 +38,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   extendSession: (accessToken: string) => {
     const expiresAt = getTokenExpiration(accessToken);
     if (expiresAt) {
+      const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
       set({
         sessionExpiresAt: expiresAt,
+        remainingSeconds: remaining,
         isSessionWarningOpen: false,
         lastWarningThreshold: null,
       });
